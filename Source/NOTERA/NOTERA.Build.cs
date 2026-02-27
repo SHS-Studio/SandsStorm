@@ -9,7 +9,7 @@ public class NOTERA : ModuleRules
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 
 		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore",
-			"EnhancedInput"
+			"EnhancedInput", "MediaAssets", "UMG"
 		});
 
 		PrivateDependencyModuleNames.AddRange(new string[] {  });
