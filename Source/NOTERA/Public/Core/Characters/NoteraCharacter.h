@@ -69,6 +69,10 @@ protected:
 	UPROPERTY(EditAnywhere, Category="Input")
 	UInputAction* MouseLookAction;
 
+	/** Mouse Look Input Action */
+	UPROPERTY(EditAnywhere, Category="Input")
+	UInputAction* BasicAttackAction;
+
 	/** Initialize input action bindings */
 	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
 
@@ -78,6 +82,10 @@ protected:
 	/** Called for looking input */
 	void Look(const FInputActionValue& Value);
 
+	void DoBasicAttack(const FInputActionValue& Value);
+
+	UPROPERTY(EditAnywhere, Category ="Attack")
+	TObjectPtr<UAnimMontage> BasicAttackMontage;
 private:
 	/** Camera boom positioning the camera behind the character */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components", meta = (AllowPrivateAccess = "true"))

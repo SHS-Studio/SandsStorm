@@ -79,6 +79,9 @@ void ANoteraCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 
 		// Looking
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &ANoteraCharacter::Look);
+
+		// Basic Atatck
+		EnhancedInputComponent->BindAction(BasicAttackAction, ETriggerEvent::Triggered, this, &ANoteraCharacter::DoBasicAttack);
 	}
 }
 
@@ -98,6 +101,21 @@ void ANoteraCharacter::Look(const FInputActionValue& Value)
 
 	// route the input
 	DoLook(LookAxisVector.X, LookAxisVector.Y);
+}
+
+void ANoteraCharacter::DoBasicAttack(const FInputActionValue& Value)
+{
+	// play attack montage
+	if(const USkeletalMeshComponent* SkeletalMeshComponent = GetMesh())
+	{
+		if(UAnimInstance* AnimInstance = SkeletalMeshComponent->GetAnimInstance())
+		{
+			if(BasicAttackMontage)
+			{
+				AnimInstance->Montage_Play(BasicAttackMontage);
+			}
+		}
+	}
 }
 
 void ANoteraCharacter::DoMove(float Right, float Forward)
