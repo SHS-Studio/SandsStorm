@@ -15,6 +15,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnSldieShowFinished);
 /**
  *
  */
+
 UCLASS()
 class NOTERA_API UHudSlideShow : public UUserWidget
 {
