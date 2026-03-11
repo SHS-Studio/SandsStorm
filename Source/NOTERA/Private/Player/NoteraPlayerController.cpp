@@ -1,0 +1,126 @@
+// Copyright. All Rights Reserved.
+
+#include "Player/NoteraPlayerController.h"
+#include "EnhancedInputSubsystems.h"
+#include "EnhancedInputComponent.h"
+#include "GameFramework/Character.h"
+#include "AbilitySystemBlueprintLibrary.h"
+#include "AbilitySystemComponent.h"
+#include "GameplayTags/NoteraTags.h"
+#include "Characters/NoteraBaseCharacter.h"
+#include "Utils/DebugUtil.h"
+
+void ANoteraPlayerController::SetupInputComponent()
+{
+	Super::SetupInputComponent();
+
+	// Add mapping contexts to the local player's enhanced input subsystem
+	UEnhancedInputLocalPlayerSubsystem* InputSubsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer());
+	if(!IsValid(InputSubsystem)) return;
+
+	for(const UInputMappingContext* Context : InputMappingContexts)
+		InputSubsystem->AddMappingContext(Context, 0);
+
+	// Bind actions to methods
+	UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(InputComponent);
+	if(!IsValid(EnhancedInputComponent)) return;
+
+	EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &ThisClass::Jump);
+	EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &ThisClass::StopJumping);
+	EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &ThisClass::Move);
+	EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &ThisClass::Look);
+
+	EnhancedInputComponent->BindAction(PrimaryAction, ETriggerEvent::Triggered, this, &ThisClass::Primary);
+	EnhancedInputComponent->BindAction(SecondaryAction, ETriggerEvent::Started, this, &ThisClass::Secondary);
+	EnhancedInputComponent->BindAction(TertiaryAction, ETriggerEvent::Started, this, &ThisClass::Tertiary);
+}
+
+void ANoteraPlayerController::Jump()
+{
+	if(!IsValid(GetCharacter())) return;
+	if(!IsAlive()) return;
+
+	GetCharacter()->Jump();
+	PRINT_DEBUG("Player Jumped");
+}
+
+void ANoteraPlayerController::StopJumping()
+{
+	if(!IsValid(GetCharacter())) return;
+	if(!IsAlive()) return;
+
+	GetCharacter()->StopJumping();
+	PRINT_DEBUG("Player Stopped Jumping");
+}
+
+void ANoteraPlayerController::Move(const FInputActionValue& Value)
+{
+	if(!IsValid(GetPawn())) return;
+	if(!IsAlive()) return;
+
+	const FVector2D MovementVector = Value.Get<FVector2D>();
+
+	// Find which way is forward
+	const FRotator YawRotation(0.f, GetControlRotation().Yaw, 0.f);
+	const FVector ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
+	const FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
+
+	GetPawn()->AddMovementInput(ForwardDirection, MovementVector.Y);
+	GetPawn()->AddMovementInput(RightDirection, MovementVector.X);
+}
+
+void ANoteraPlayerController::Look(const FInputActionValue& Value)
+{
+	if(!bCanMouseLookIfDead)
+		if(!IsAlive())
+			return;
+
+	const FVector2D LookAxisVector = Value.Get<FVector2D>();
+
+	AddYawInput(LookAxisVector.X);
+	AddPitchInput(LookAxisVector.Y);
+}
+
+void ANoteraPlayerController::Primary()
+{
+	PRINT_DEBUG("Primary ability key pressed");
+	ActivateAbility(NoteraTags::NoteraAbilities::Primary);
+}
+
+void ANoteraPlayerController::ActivateAbility(const FGameplayTag& AbilityTag) const
+{
+	if(!IsAlive()) return;
+
+	UAbilitySystemComponent* Asc = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(GetPawn());
+	if(!IsValid(Asc))
+	{
+		PRINT_DEBUG_WARNING("ActivateAbility failed: ASC invalid");
+		return;
+	}
+
+	// ReSharper disable once CppTooWideScope
+	const bool bActivated = Asc->TryActivateAbilitiesByTag(AbilityTag.GetSingleTagContainer());
+	if(bActivated)
+		PRINT_DEBUG("Activated ability for tag: %s", *AbilityTag.ToString());
+	else
+		PRINT_DEBUG("No ability activated for tag: %s", *AbilityTag.ToString());
+}
+
+void ANoteraPlayerController::Secondary()
+{
+	ActivateAbility(NoteraTags::NoteraAbilities::Secondary);
+	PRINT_DEBUG("Secondary ability requested");
+}
+
+void ANoteraPlayerController::Tertiary()
+{
+	ActivateAbility(NoteraTags::NoteraAbilities::Tertiary);
+	PRINT_DEBUG("Tertiary ability requested");
+}
+
+bool ANoteraPlayerController::IsAlive() const
+{
+	const ANoteraBaseCharacter* BaseCharacter = Cast<ANoteraBaseCharacter>(GetPawn());
+	if(!IsValid(BaseCharacter)) return false;
+	return BaseCharacter->IsAlive();
+}

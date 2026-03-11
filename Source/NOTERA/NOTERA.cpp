@@ -4,3 +4,9 @@
 #include "Modules/ModuleManager.h"
 
 IMPLEMENT_PRIMARY_GAME_MODULE( FDefaultGameModuleImpl, NOTERA, "NOTERA" );
+
+namespace NoteraTags
+{
+	// Define the actual value of the "Player" tag.
+	const FName Player = FName("Player");
+}
